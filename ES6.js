@@ -3,6 +3,7 @@
 
 class AsyncArray {
     constructor(array) {
+
         this.__PromissesArray = Promise.resolve(array);
     }
 
@@ -18,9 +19,11 @@ class AsyncArray {
                 }, Promise.resolve([]));
 
             })
-            .catch((err) => {
+            .catch(Promise.reject);
+    }
 
-            });
+    forEachAsyncConcurrent(fn) {
+        return Promise.all(this.__PromissesArray.map(fn));
     }
 
     filterAsync(fn) {
@@ -28,7 +31,7 @@ class AsyncArray {
             .then((array) => {
 
                 return array.reduce((prev, item, index, array) => {
-                    return prev.then((result) =>
+                    prev.then((result) =>
                         fn(item, index, array)
                             .then((isPass) => {
                                 if (isPass) {
@@ -37,40 +40,43 @@ class AsyncArray {
                                 }
                                 return result;
                             })
-                    );
+                    )
                 }, Promise.resolve([]));
 
-            })
-            .catch((err) => {
+            }).catch(Promise.reject)
+    }
 
-            });
+    mapAsync(fn) {
+        return this.__PromissesArray
+            .then((array) => {
+                return array.reduce((prev, item, index, array) =>
+                        prev.then((result) =>
+                            fn(item, index, array)
+                                .then((newItem) => {
+                                    result.push(newItem);
+                                    return result;
+                                })
+                        )
+                    , Promise.resolve([]));
+
+            })
+            .catch(Promise.reject);
+    }
+
+    mapAsyncConcurrent(fn) {
+        return Promise.all(this.__PromissesArray.map(fn));
+    }
+
+    reduceAsync(fn, initial) {
+        return this.__PromissesArray
+            .then((array) => {
+                return array.reduce((prev, item, index, array) =>
+                        prev.then((result) =>
+                            fn(result, item, index, array)
+                        )
+                    , Promise.resolve(initial));
+
+            })
+            .catch(Promise.reject);
     }
 }
-
-let newArr = new AsyncArray([1, 2, 3]);
-
-newArr.forEachAsync((item, index, array) => {
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            console.log(item);
-                resolve();
-            }
-            , 2000)
-    })
-});
-
-newArr.filterAsync((item, index, array) => {
-    return new Promise((resolve, reject) => {
-
-        setTimeout(()=>{
-            if (item > 1)
-                resolve(true);
-            else
-                resolve(false);
-        }, 2000);
-
-    });
-}).then((res)=>{
-    console.log(res);
-});
-
