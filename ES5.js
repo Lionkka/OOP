@@ -3,12 +3,10 @@
 
 function AsyncArray(array) {
     if (array instanceof Promise) {
-        console.log('promise in constructor');
         this.__PromissesArray = array;
     }
 
     else {
-        console.log('array');
         this.__PromissesArray = Promise.resolve(array);
     }
 }
