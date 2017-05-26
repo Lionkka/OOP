@@ -12,48 +12,51 @@ function AsyncArray(array) {
 }
 
 
-AsyncArray.prototype.then = fn => {
+AsyncArray.prototype.then = function (fn) {
     return this.__PromissesArray.then(fn);
 };
 
-AsyncArray.prototype.catch = fn => {
+AsyncArray.prototype.catch = function (fn) {
     return this.__PromissesArray.catch(fn);
 };
 
-AsyncArray.prototype.forEachAsync = fn => {
+AsyncArray.prototype.forEachAsync = function (fn) {
     return new AsyncArray(
         this.__PromissesArray
-            .then((array) => {
+            .then(function (array) {
 
-                array.reduce((prev, item, index, array) => {
-                    return prev.then(() =>
-                        fn(item, index, array)
-                    );
+                array.reduce(function (prev, item, index, array) {
+                    return prev.then(function(){
+                        return fn(item, index, array);
+                        }
+                    )
+                    ;
                 }, Promise.resolve([]));
 
             })
     );
 };
 
-AsyncArray.prototype.forEachAsyncConcurrent = fn => {
+AsyncArray.prototype.forEachAsyncConcurrent = function (fn) {
     return new AsyncArray(Promise.all(this.__PromissesArray.map(fn)));
 };
 
-AsyncArray.prototype.filterAsync = fn => {
+AsyncArray.prototype.filterAsync = function (fn) {
     return new AsyncArray(
         this.__PromissesArray
-            .then((array) => {
+            .then(function (array) {
 
-                return array.reduce((prev, item, index, array) => {
-                    return prev.then((result) =>
-                        fn(item, index, array)
-                            .then((isPass) => {
-                                if (isPass) {
-                                    result.push(item);
+                return array.reduce(function (prev, item, index, array) {
+                    return prev.then(function (result) {
+                            return fn(item, index, array)
+                                .then(function (isPass) {
+                                    if (isPass) {
+                                        result.push(item);
+                                        return result;
+                                    }
                                     return result;
-                                }
-                                return result;
-                            })
+                                })
+                        }
                     )
                 }, Promise.resolve([]));
 
@@ -61,41 +64,40 @@ AsyncArray.prototype.filterAsync = fn => {
     );
 };
 
-AsyncArray.prototype.mapAsync = fn => {
+AsyncArray.prototype.mapAsync = function (fn) {
     return new AsyncArray(
         this.__PromissesArray
-            .then((array) => {
-                return array.reduce((prev, item, index, array) => {
-                        return prev.then((result) =>
-                            fn(item, index, array)
-                                .then((newItem) => {
-                                    result.push(newItem);
-                                    return result;
-                                })
-                        )
-                    }
-                    , Promise.resolve([]));
-
-            })
-    );
+            .then(function (array) {
+                    return array.reduce(function (prev, item, index, array) {
+                            return prev
+                                .then(function (result) {
+                                        return fn(item, index, array)
+                                            .then(function (newItem) {
+                                                result.push(newItem);
+                                                return result;
+                                            })
+                                    }
+                                )
+                        }
+                    )
+                }, Promise.resolve([])))
 };
 
-AsyncArray.prototype.mapAsyncConcurrent = fn => {
+AsyncArray.prototype.mapAsyncConcurrent = function (fn) {
     return new AsyncArray(Promise.all(this.__PromissesArray.map(fn)));
 };
 
-AsyncArray.prototype.reduceAsync = (fn, initial) => {
+AsyncArray.prototype.reduceAsync = function (fn, initial) {
     return new AsyncArray(
         this.__PromissesArray
-            .then((array) => {
-                return array.reduce((prev, item, index, array) => {
-                        return prev.then((result) =>
-                            fn(result, item, index, array)
+            .then(function (array) {
+                return array.reduce(function (prev, item, index, array) {
+                        return prev.then(function (result) {
+                                return fn(result, item, index, array);
+                            }
                         )
-                    }
-                    , Promise.resolve(initial));
-
+                    }, Promise.resolve(initial)
+                );
             })
     );
 };
-
